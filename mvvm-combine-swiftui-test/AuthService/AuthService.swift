@@ -18,7 +18,8 @@ class AuthService: ObservableObject {
   static let expiredKey  = "ACCESS-TOKEN-EXPIRED"
 
   init() {}
-
+  
+  /// Bearer token
   var token: String? {
     get {
       Keychain.load(key: AuthService.keychainKey)
@@ -32,6 +33,7 @@ class AuthService: ObservableObject {
     }
   }
   
+  /// Token exprired date
   var exprired: Date? {
     get {
       UserDefaults.standard.object(forKey: AuthService.expiredKey) as? Date
@@ -44,27 +46,27 @@ class AuthService: ObservableObject {
       }
     }
   }
-
+  
+  /// Get token request
   func auth() async throws {
     let auth: AuthParameters = AuthParameters(grant_type: "client_credentials",
                                               client_id: Config.CLIENT_ID.rawValue,
                                               client_secret: Config.CLIENT_SECRET.rawValue)
     
-    AF.request(Config.API_URL.rawValue + "/oauth2/token", method: .post, parameters: auth)
+    let result = try await AF.request(Config.API_URL.rawValue + "/oauth2/token", method: .post, parameters: auth)
       .validate()
-      .responseDecodable(of: Auth.self) { (response) in
-        guard let result = response.value else {
-          return
-        }
-        self.token = result.access_token
-        self.exprired = result.expired
-      }
+      .serializingDecodable(Auth.self).value
+    
+    self.token = result.access_token
+    self.exprired = result.expired
   }
   
+  /// Delete token
   func logout() {
     token = nil
   }
   
+  /// Check token 
   func isTokenExpired() -> Bool {
     guard let exprired = self.exprired else {
       return true

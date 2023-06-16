@@ -10,6 +10,11 @@ import UIKit
 
 enum Keychain {
   @discardableResult
+  /// Save data in Keychain
+  /// - Parameters:
+  ///   - key: String
+  ///   - data: String
+  /// - Returns: OSStatus
   static func save(key: String, data: String) -> OSStatus {
     let bytes: [UInt8] = .init(data.utf8)
     let bytesAsData = Data(bytes)
@@ -25,6 +30,9 @@ enum Keychain {
   }
 
   @discardableResult
+  /// Delete data from Keychain
+  /// - Parameter key: key
+  /// - Returns: OSStatus
   static func delete(key: String) -> OSStatus {
     let query = [
       kSecClass: kSecClassGenericPassword,
@@ -33,7 +41,10 @@ enum Keychain {
 
     return SecItemDelete(query as CFDictionary)
   }
-
+  
+  /// Loadr data from Keychain
+  /// - Parameter key: key
+  /// - Returns: String?
   static func load(key: String) -> String? {
     let query = [
       kSecClass: kSecClassGenericPassword,

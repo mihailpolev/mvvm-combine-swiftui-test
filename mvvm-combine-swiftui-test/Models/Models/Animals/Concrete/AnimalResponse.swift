@@ -7,12 +7,11 @@
 
 import Foundation
 
-public final class AnimalResponse {
+public struct AnimalResponse {
   public let animals: [Animal]
   public let pagination: AnimalResponsePagination
-
-  public init(animals: [Animal], pagination: AnimalResponsePagination) {
-    self.animals = animals
-    self.pagination = pagination
-  }
 }
+
+// MARK: Codable
+
+extension AnimalResponse: Codable {}

@@ -11,6 +11,8 @@ import Combine
 final class AnimalDetailViewModel: ObservableObject {
   @Published var animal: Animal?
   
+  /// Update animal state
+  /// - Parameter animal: Animal
   func update(animal: Animal) {
     self.animal = animal
   }

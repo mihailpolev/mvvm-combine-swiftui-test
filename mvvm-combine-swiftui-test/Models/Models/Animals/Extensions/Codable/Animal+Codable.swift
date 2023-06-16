@@ -37,33 +37,32 @@ extension Animal: Codable {
 
   // MARK: - Decodable
     
-  public convenience init(from decoder: Decoder) throws {
+  public init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     
     let id: Int                             = try container.decode(Int.self, forKey: .id)
     let organizationId: String              = try container.decode(String.self, forKey: .organizationId)
     let url: URL?                           = try container.decode(URL?.self, forKey: .url)
-    let type: AnimalType                    = try container.decode(AnimalType.self, forKey: .type)
+    let type: Animal.Types                  = try container.decode(Animal.Types.self, forKey: .type)
     let species: String                     = try container.decode(String.self, forKey: .species)
-    let breeds: AnimalBreeds                = try container.decode(AnimalBreeds.self, forKey: .breeds)
-    let colors: AnimalColors                = try container.decode(AnimalColors.self, forKey: .colors)
-    let age: AnimalAge                      = try container.decode(AnimalAge.self, forKey: .age)
-    let gender: AnimalGender                = try container.decode(AnimalGender.self, forKey: .gender)
-    let size: AnimalSize                    = try container.decode(AnimalSize.self, forKey: .size)
+    let breeds: Animal.Breeds               = try container.decode(Animal.Breeds.self, forKey: .breeds)
+    let colors: Animal.Colors               = try container.decode(Animal.Colors.self, forKey: .colors)
+    let age: Animal.Age                     = try container.decode(Animal.Age.self, forKey: .age)
+    let gender: Animal.Gender               = try container.decode(Animal.Gender.self, forKey: .gender)
+    let size: Animal.Size                   = try container.decode(Animal.Size.self, forKey: .size)
     let coat: String?                       = try container.decode(String?.self, forKey: .coat)
     let name: String                        = try container.decode(String.self, forKey: .name)
     let description: String?                = try container.decode(String?.self, forKey: .description)
     let organizationAnimalId: String?       = try container.decode(String?.self, forKey: .organizationAnimalId)
-    let photos: [AnimalPhoto]               = try container.decode([AnimalPhoto].self, forKey: .photos)
-    let primaryPhotoCropped: AnimalPhoto?   = try container.decode(AnimalPhoto?.self, forKey: .primaryPhotoCropped)
+    let photos: [Animal.Photo]              = try container.decode([Animal.Photo].self, forKey: .photos)
+    let primaryPhotoCropped: Animal.Photo?  = try container.decode(Animal.Photo?.self, forKey: .primaryPhotoCropped)
     let status: String                      = try container.decode(String.self, forKey: .status)
     let statusChangedAt: String             = try container.decode(String.self, forKey: .statusChangedAt)
     let publishedAt: String                 = try container.decode(String.self, forKey: .publishedAt)
     let distance: Int?                      = try container.decode(Int?.self, forKey: .distance)
-    let contact: AnimalContact              = try container.decode(AnimalContact.self, forKey: .contact)
+    let contact: Animal.Contact             = try container.decode(Animal.Contact.self, forKey: .contact)
     
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ssZZZ"
+    let dateFormatter = ISO8601DateFormatter()
     
     self.init(id: id,
               organization_id: organizationId,

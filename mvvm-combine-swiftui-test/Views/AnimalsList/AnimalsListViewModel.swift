@@ -8,28 +8,51 @@
 import Foundation
 import Combine
 import SwiftUI
+import os
 
 final class AnimalsListViewModel: ObservableObject {
-  var networkClient: NetworkClientType
+  var networkClient: NetworkClient
   @Published var animals: [Animal] = []
+  @Published var error: ErrorResponse?
 
-  init(networkClient: NetworkClientType) {
+  init(networkClient: NetworkClient) {
     self.networkClient = networkClient
     
     getAnimals()
   }
   
+  /// Load animals list
   func getAnimals() {
-    Task { @MainActor [weak self] in
+    Task(priority: .userInitiated) { [weak self] in
       do {
         let result = try await self?.networkClient.getAnimals()
-        self?.animals = result ?? []
+        
+        do {
+          let animals = try result?.get()
+          await self?.update(animals: animals ?? [])
+        } catch {
+          await self?.update(error: .otherError)
+        }
       } catch {
-        print(error.localizedDescription)
+        Logger(subsystem: "sub", category: "AnimalsList").debug("\(error)")
       }
     }
   }
   
+  /// Update animals state
+  /// - Parameter animals: [Animal]
+  @MainActor func update(animals: [Animal]) {
+    self.animals = animals
+  }
+  
+  /// Update error state
+  /// - Parameter error: ErrorResponse?
+  @MainActor func update(error: ErrorResponse?) {
+    self.error = error
+  }
+  
+  /// Toggle Color Scheme
+  /// - Parameter colorScheme: ColorScheme
   func toggleColorScema(colorScheme: ColorScheme) {
     UIApplication.shared.windows.first?.overrideUserInterfaceStyle = colorScheme == .light ? .dark : .light
   }

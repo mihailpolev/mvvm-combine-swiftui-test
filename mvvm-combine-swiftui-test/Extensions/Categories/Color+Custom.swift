@@ -17,6 +17,8 @@ extension Color {
     case detailInfoBackground = "DetailInfoBackground"
     case maleColor = "MaleColor"
     case femaleColor = "FamaleColor"
+    case infoGray = "InfoGray"
+    case buttonBackground = "ButtonBackground"
 
     var name: String { return "\(self.rawValue)" }
   }

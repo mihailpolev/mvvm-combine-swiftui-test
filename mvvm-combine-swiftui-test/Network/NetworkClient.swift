@@ -8,78 +8,74 @@
 import Foundation
 import Alamofire
 
-protocol NetworkClientType {
-  func getAnimals() async throws -> [Animal]
-}
-
-class NetworkClient: NetworkClientType {
+class NetworkClient {
   var authService: AuthService = AuthService()
   
-  func getAnimals() async throws -> [Animal] {
-    if authService.isTokenExpired() {
-      try await authService.auth()
+  /// Load Animals data
+  /// - Returns: Result<[Animal], ErrorResponse>
+  func getAnimals() async throws -> Result<[Animal], ErrorResponse> {
+    if self.authService.isTokenExpired() {
+      try await self.authService.auth()
     }
     
     guard let token = Keychain.load(key: AuthService.keychainKey) else {
-      return []
+      return .failure(.serverError(message: "Access token invalid or expired"))
     }
     
-    let data = try await NetworkClient.request(url: "/animals", method: .get, token: token)
+    let result = try await NetworkClient.request(url: "/animals", method: .get, token: token)
     
-    let response = try JSONDecoder().decode(AnimalResponse.self, from: data)
-    
-    return response.animals
+    do {
+      let data = try result.get()
+      let response = try JSONDecoder().decode(AnimalResponse.self, from: data)
+      
+      return .success(response.animals)
+    } catch {
+      return .failure(.otherError)
+    }
   }
-  
-
-//    NetworkClient.request(url: url, parameters: parameters) { data, response, error in
-//      if data == nil || response == nil || error != nil {
-//        onCompletion(.failure(.clientError))
-//        return
-//      }
-//
-//      var statusCode = 500
-//      if let response = response as? HTTPURLResponse {
-//        statusCode = response.statusCode
-//      }
-//
-//      do {
-//        switch statusCode {
-//        case 404:
-//          // let response = try JSONDecoderWrapper().decode(ErrorResponse.self, from: data!)
-//          onCompletion(.failure(.serverError(message: response.error.message)))
-//        case 200:
-//            // let user = try JSONDecoderWrapper().decode(User.self, from: data!)
-//            // onCompletion(.success(user))
-//          onCompletion(.failure(.clientError))
-//        default:
-//          onCompletion(.failure(.serverErrorOther))
-//        }
-//      } catch {
-//        onCompletion(.failure(.clientError))
-//      }
-//    }
-
 }
 
 extension NetworkClient {
-  class func request(url: String, method: HTTPMethod, token: String) async throws -> Data {
-    try await withUnsafeThrowingContinuation { completion in
-      let headers: HTTPHeaders = [.authorization(bearerToken: token)]
-      
-      AF.request(Config.API_URL.rawValue + url, method: method, headers: headers)
-        .validate()
-        .responseData { response in
-          if let data = response.data {
-            completion.resume(returning: data)
-            return
-          }
-          if let err = response.error {
-            completion.resume(throwing: err)
-            return
-          }
-          fatalError("should not get here")
-        }
+  /// Send request method
+  /// - Parameters:
+  ///   - url: String
+  ///   - method: HTTPMethod
+  ///   - token: token
+  /// - Returns: Result<Data, ErrorResponse>
+  class func request(url: String, method: HTTPMethod, token: String) async throws -> Result<Data, ErrorResponse> {
+    let headers: HTTPHeaders = [.authorization(bearerToken: token)]
+    
+    let response = await AF.request(Config.API_URL.rawValue + url, method: method, headers: headers)
+      .validate()
+      .serializingData().response
+        
+    var statusCode = 500
+
+    if let response = response.response {
+      statusCode = response.statusCode
+    }
+    
+    do {
+      switch statusCode {
+      case 400:
+        let result = try JSONDecoder().decode(ErrorResponse.self, from: response.data!)
+        return .failure(.serverError(message: result.localizedDescription))
+      case 401:
+        let result = try JSONDecoder().decode(ErrorResponse.self, from: response.data!)
+        return .failure(.serverError(message: result.localizedDescription))
+      case 404:
+        let result = try JSONDecoder().decode(ErrorResponse.self, from: response.data!)
+        return .failure(.serverError(message: result.localizedDescription))
+      case 500:
+        let result = try JSONDecoder().decode(ErrorResponse.self, from: response.data!)
+        return .failure(.serverError(message: result.localizedDescription))
+      case 200:
+        return .success(response.data ?? .empty)
+      default:
+        return .failure(.otherError)
+      }
+    } catch {
+      return .failure(.otherError)
     }
   }
 }
